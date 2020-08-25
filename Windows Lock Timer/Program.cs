@@ -9,9 +9,25 @@ namespace Windows_Lock_Timer
 {
     class Program
     {
+        static void eventLog(string message, short type)
+        {
+            using (EventLog eventLog = new EventLog("Application"))
+            {
+                eventLog.Source = "Application";
+                eventLog.WriteEntry(message, EventLogEntryType.Information, 420, type);
+            }
+        }
         static void Main(string[] args)
         {
             UsageSession usageSession = new UsageSession();
+            usageSession.reason = "user";
+
+            void startSession(string reason)
+            {
+                usageSession.active = true;
+                usageSession.expiry = DateTime.Now.AddSeconds(600); //MAKE THIS CONFIGURABLE
+                eventLog(reason, 1);
+            }
 
             SystemEvents.SessionSwitch += new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
 
@@ -20,13 +36,23 @@ namespace Windows_Lock_Timer
                 if (e.Reason == SessionSwitchReason.SessionLock)
                 {
                     //Computer was locked, either by user or script
-                    Console.WriteLine("locked at:");
+                    /*
+                    Console.Write("locked at: ");
+                    Console.WriteLine(DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
+                    */
+
+
+                    eventLog("locked because of " + usageSession.reason, 1);
                     usageSession.active = false;
+                    usageSession.reason = "user";
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogoff)
                 {
+                    eventLog("user has logged off", 1);
+                    usageSession.active = false;
+                    usageSession.reason = "user";
                     //User has logged off... this is of their own doing
-                    Console.WriteLine("logged off");
+                    //Console.WriteLine("logged off");
 
                     //since the user decided to lock themselves, we need to cancel the task and dispose
                     //tokenSource2.Dispose();
@@ -34,23 +60,21 @@ namespace Windows_Lock_Timer
                 else if (e.Reason == SessionSwitchReason.SessionUnlock)
                 {
                     //User has been allowed back in
-                    usageSession.active = true;
-                    usageSession.expiry = DateTime.Now.AddSeconds(10); //MAKE THIS CONFIGURABLE
+                    startSession("unlocked");
 
                     //Print stuffs
+                    /*
                     Console.Write("unlocked at: ");
                     Console.WriteLine(DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
+                    */
 
-                    Console.Write("going to lock at: ");
-                    Console.WriteLine(usageSession.expiry.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
+
+                    //eventLog("going to lock at: " + usageSession.expiry.ToString("dddd, dd MMMM yyyy HH:mm:ss"), 1);
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogon)
                 {
                     //User has been allowed in, possibly for the first time of the day
-                    Console.WriteLine("logged in");
-                    //First, obviously, log this action.
-                    //Second, we want to figure out "when is 60 minutes from now?"
-                    //Third, we want to start checking periodically if the time has expired.
+                    startSession("logged in");
                 }
             }
 
@@ -63,20 +87,28 @@ namespace Windows_Lock_Timer
                     //Console.WriteLine(usageSession.active.ToString());
                     if (usageSession.active)
                     {
-                        int comparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry);
-                        Console.WriteLine(comparisonResult);
-                        if (comparisonResult >= 0)
+                        int expiryComparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry);
+                        //Console.WriteLine(expiryComparisonResult);
+                        if (expiryComparisonResult >= 0)
                         {
+                            /*
                             Console.Write("expiring at: ");
                             Console.WriteLine(DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
+                            */
+
+                            //eventLog("session has expired", 1);
+
                             try
                             {
+                                usageSession.reason = "script";
                                 Process.Start("rundll32.exe", "user32.dll,LockWorkStation");
                             }
                             catch
                             {
-                                Console.WriteLine("Failed to lock");
+                                eventLog("Failed to lock", 2);
+                                usageSession.reason = "user";
                             }
+
                             usageSession.active = false;
                         }
                     }

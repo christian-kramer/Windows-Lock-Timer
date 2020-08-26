@@ -20,7 +20,12 @@ namespace Windows_Lock_Timer
         static void Main(string[] args)
         {
             // Clean up all these comments
+            ArgumentParser arguments = new ArgumentParser(args);
             UsageSession usageSession = new UsageSession();
+
+            Console.WriteLine(arguments.lockTime);
+            Console.WriteLine(arguments.warningTime);
+            Console.WriteLine(arguments.warningMessage);
 
             void startSession(string reason)
             {

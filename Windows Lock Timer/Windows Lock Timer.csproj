@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RootNamespace>Windows_Lock_Timer</RootNamespace>
     <AssemblyName>WindowsLockTimer</AssemblyName>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>

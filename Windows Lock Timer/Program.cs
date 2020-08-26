@@ -19,11 +19,13 @@ namespace Windows_Lock_Timer
         }
         static void Main(string[] args)
         {
+            // Clean up all these comments
             UsageSession usageSession = new UsageSession();
-            usageSession.reason = "user";
 
             void startSession(string reason)
             {
+                //establish default reason
+                usageSession.reason = "user";
                 usageSession.active = true;
                 usageSession.expiry = DateTime.Now.AddSeconds(600); //MAKE THIS CONFIGURABLE
                 eventLog(reason, 1);
@@ -36,40 +38,18 @@ namespace Windows_Lock_Timer
                 if (e.Reason == SessionSwitchReason.SessionLock)
                 {
                     //Computer was locked, either by user or script
-                    /*
-                    Console.Write("locked at: ");
-                    Console.WriteLine(DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
-                    */
-
-
                     eventLog("locked because of " + usageSession.reason, 1);
                     usageSession.active = false;
-                    usageSession.reason = "user";
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogoff)
                 {
                     eventLog("user has logged off", 1);
                     usageSession.active = false;
-                    usageSession.reason = "user";
-                    //User has logged off... this is of their own doing
-                    //Console.WriteLine("logged off");
-
-                    //since the user decided to lock themselves, we need to cancel the task and dispose
-                    //tokenSource2.Dispose();
                 }
                 else if (e.Reason == SessionSwitchReason.SessionUnlock)
                 {
                     //User has been allowed back in
                     startSession("unlocked");
-
-                    //Print stuffs
-                    /*
-                    Console.Write("unlocked at: ");
-                    Console.WriteLine(DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
-                    */
-
-
-                    //eventLog("going to lock at: " + usageSession.expiry.ToString("dddd, dd MMMM yyyy HH:mm:ss"), 1);
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogon)
                 {
@@ -83,21 +63,13 @@ namespace Windows_Lock_Timer
             var loop1Task = Task.Run(async () => {
                 while (true)
                 {
+
                     await Task.Delay(TimeSpan.FromSeconds(1));
-                    //Console.WriteLine(usageSession.active.ToString());
                     if (usageSession.active)
                     {
                         int expiryComparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry);
-                        //Console.WriteLine(expiryComparisonResult);
                         if (expiryComparisonResult >= 0)
                         {
-                            /*
-                            Console.Write("expiring at: ");
-                            Console.WriteLine(DateTime.Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
-                            */
-
-                            //eventLog("session has expired", 1);
-
                             try
                             {
                                 usageSession.reason = "script";
@@ -106,7 +78,6 @@ namespace Windows_Lock_Timer
                             catch
                             {
                                 eventLog("Failed to lock", 2);
-                                usageSession.reason = "user";
                             }
 
                             usageSession.active = false;

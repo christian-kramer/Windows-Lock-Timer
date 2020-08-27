@@ -32,7 +32,8 @@ namespace Windows_Lock_Timer
                 //establish default reason
                 usageSession.reason = "user";
                 usageSession.active = true;
-                usageSession.expiry = DateTime.Now.AddSeconds(600); //MAKE THIS CONFIGURABLE
+                usageSession.warned = false;
+                usageSession.expiry = DateTime.Now.AddMinutes(arguments.lockTime); //MAKE THIS CONFIGURABLE
                 eventLog(reason, 1);
             }
 
@@ -43,6 +44,7 @@ namespace Windows_Lock_Timer
                 if (e.Reason == SessionSwitchReason.SessionLock)
                 {
                     //Computer was locked, either by user or script
+                    Console.WriteLine("locked because of " + usageSession.reason);
                     eventLog("locked because of " + usageSession.reason, 1);
                     usageSession.active = false;
                 }
@@ -55,6 +57,7 @@ namespace Windows_Lock_Timer
                 {
                     //User has been allowed back in
                     startSession("unlocked");
+                    Console.WriteLine("unlocked");
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogon)
                 {
@@ -68,13 +71,26 @@ namespace Windows_Lock_Timer
             var loop1Task = Task.Run(async () => {
                 while (true)
                 {
-
                     await Task.Delay(TimeSpan.FromSeconds(1));
+                    Console.WriteLine(usageSession.active.ToString());
                     if (usageSession.active)
                     {
+                        Console.WriteLine("looping");
+                        int warningComparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry.AddMinutes(0 - arguments.warningTime));
                         int expiryComparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry);
+
+                        if ((usageSession.warned == false) && (warningComparisonResult >= 0))
+                        {
+                            Console.WriteLine("doing the shutdown");
+                            Process.Start("shutdown", "-s -t 60 -c \"" + arguments.warningMessage + "\"");
+                            Thread.Sleep(5000);
+                            Process.Start("shutdown", "-a");
+                            usageSession.warned = true;
+                        }
+
                         if (expiryComparisonResult >= 0)
                         {
+                            Console.WriteLine("locking");
                             try
                             {
                                 usageSession.reason = "script";

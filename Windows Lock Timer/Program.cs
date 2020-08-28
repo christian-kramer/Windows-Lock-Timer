@@ -66,6 +66,9 @@ namespace Windows_Lock_Timer
                 }
             }
 
+
+            startSession("logged in");
+
             //This script is ran at the time the computer turns on.
 
             var loop1Task = Task.Run(async () => {

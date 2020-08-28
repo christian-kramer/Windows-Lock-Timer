@@ -27,17 +27,18 @@ namespace Windows_Lock_Timer
                 }
             }
 
-            if (String.IsNullOrEmpty(lockTime.ToString()))
+
+            if (lockTime.ToString() == "0")
             {
                 lockTime = 60;
             }
 
-            if (String.IsNullOrEmpty(warningTime.ToString()))
+            if (warningTime.ToString() == "0")
             {
                 warningTime = 2;
             }
 
-            if (String.IsNullOrEmpty(warningMessage))
+            if (string.IsNullOrEmpty(warningMessage))
             {
                 warningMessage = "This computer is set to forcefully lock soon.";
             }

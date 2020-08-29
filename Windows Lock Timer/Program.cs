@@ -23,9 +23,9 @@ namespace Windows_Lock_Timer
             ArgumentParser arguments = new ArgumentParser(args);
             UsageSession usageSession = new UsageSession();
 
-            Console.WriteLine(arguments.lockTime);
-            Console.WriteLine(arguments.warningTime);
-            Console.WriteLine(arguments.warningMessage);
+            //Console.WriteLine(arguments.lockTime);
+            //Console.WriteLine(arguments.warningTime);
+            //Console.WriteLine(arguments.warningMessage);
 
             void startSession(string reason)
             {
@@ -75,16 +75,16 @@ namespace Windows_Lock_Timer
                 while (true)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1));
-                    Console.WriteLine(usageSession.active.ToString());
+                    //Console.WriteLine(usageSession.active.ToString());
                     if (usageSession.active)
                     {
-                        Console.WriteLine("looping");
+                        //Console.WriteLine("looping");
                         int warningComparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry.AddMinutes(0 - arguments.warningTime));
                         int expiryComparisonResult = DateTime.Compare(DateTime.Now, usageSession.expiry);
 
                         if ((usageSession.warned == false) && (warningComparisonResult >= 0))
                         {
-                            Console.WriteLine("doing the shutdown");
+                            //Console.WriteLine("doing the shutdown");
                             Process.Start("shutdown", "-s -t 60 -c \"" + arguments.warningMessage + "\"");
                             Thread.Sleep(5000);
                             Process.Start("shutdown", "-a");
@@ -93,7 +93,7 @@ namespace Windows_Lock_Timer
 
                         if (expiryComparisonResult >= 0)
                         {
-                            Console.WriteLine("locking");
+                            //Console.WriteLine("locking");
                             try
                             {
                                 usageSession.reason = "script";

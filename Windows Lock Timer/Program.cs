@@ -98,6 +98,7 @@ namespace Windows_Lock_Timer
                             {
                                 usageSession.reason = "script";
                                 Process.Start("rundll32.exe", "user32.dll,LockWorkStation");
+                                eventLog("Time's up, telling PC to lock", 1);
                             }
                             catch
                             {

@@ -3,7 +3,9 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-
+using System.Net.Sockets;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace Windows_Lock_Timer
 {
@@ -106,6 +108,33 @@ namespace Windows_Lock_Timer
                             }
 
                             usageSession.active = false;
+
+                            /*
+                             * This last part constitutes the "tell another computer" bit
+                             */
+
+                            TcpClient server;
+                            TimerPacket timerPacket = new TimerPacket();
+
+
+                            timerPacket.Message = "this is my broadcast text";
+                            timerPacket.Count = 20;
+
+
+                            try
+                            {
+                                server = new TcpClient("localhost", 1337);
+                            }
+                            catch (SocketException)
+                            {
+                                Console.WriteLine("Unable to connect to server");
+                                return;
+                            }
+
+                            string input = JsonConvert.SerializeObject(timerPacket);
+                            NetworkStream ns = server.GetStream();
+                            ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);
+                            ns.Flush();
                         }
                     }
                 }

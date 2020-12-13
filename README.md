@@ -14,6 +14,7 @@ ___
 <pre>
 -t			number of minutes until computer will lock
 -w			number of minutes prior to locking the warning will display
+-c			number of minutes for the cooldown between sessions
 -m			the text of the warning message to display
 </pre>
 

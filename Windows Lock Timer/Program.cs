@@ -2,10 +2,14 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Windows_Lock_Timer
 {
@@ -19,6 +23,27 @@ namespace Windows_Lock_Timer
                 eventLog.WriteEntry(message, EventLogEntryType.Information, 420, type);
                 Debug.WriteLine("event logging: " + message);
             }
+        }
+
+        static bool sendTCP(TimerPacket timerPacket, string ipString, int port)
+        {
+            TcpClient server;
+
+            try
+            {
+                server = new TcpClient(ipString, port);
+            }
+            catch (SocketException)
+            {
+                //Console.WriteLine("Unable to connect to server");
+                return false;
+            }
+
+            string input = JsonConvert.SerializeObject(timerPacket);
+            NetworkStream ns = server.GetStream();
+            ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);
+            ns.Flush();
+            return true;
         }
         static void Main(string[] args)
         {
@@ -72,6 +97,7 @@ namespace Windows_Lock_Timer
             arguments.lockTime = 2;
             arguments.warningTime = 1;
             arguments.cooldownTime = 2;
+            arguments.port = 6434;
             arguments.warningMessage = "Debug warning message";
 #endif
 
@@ -242,6 +268,59 @@ namespace Windows_Lock_Timer
 
                             usageSession.active = false;
 
+                            string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
+                            if (File.Exists(hostFilePath))
+                            {
+                                Debug.WriteLine("Heyo file exists");
+                                string hostFileContents = File.ReadAllText(hostFilePath);
+                                foreach (string host in hostFileContents.Split('\n'))
+                                {
+                                    string trimmedHost = host.Trim();
+
+
+                                    TimerPacket timerPacket = new TimerPacket();
+                                    timerPacket.Message = "yeet";
+                                    timerPacket.Count = arguments.cooldownTime;
+
+                                    if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                                    {
+                                        Debug.WriteLine(trimmedHost + " totally worked");
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine("TCP did not send to " + trimmedHost);
+                                    }
+
+                                    /*
+                                    IPAddress hostAddress;
+
+                                    if (IPAddress.TryParse(trimmedHost, out hostAddress))
+                                    {
+                                        Debug.WriteLine(hostAddress.ToString() + " is an IP address");
+                                    }
+                                    else
+                                    {
+                                        IPHostEntry yeet;
+                                        bool success = true;
+                                        try
+                                        {
+                                            yeet = Dns.GetHostEntry(trimmedHost);
+                                            Debug.WriteLine(yeet.AddressList[0]);
+                                        }
+                                        catch
+                                        {
+                                            //Debug.WriteLine("Failed to resolve " + trimmedHost);
+                                            success = false;
+                                        }
+
+                                        if (success)
+                                        {
+                                            Debug.WriteLine("successfully resolved host " + trimmedHost);
+                                        }
+                                    }
+                                    */
+                                }
+                            }
 
                             /* Begin TCP communication 
 

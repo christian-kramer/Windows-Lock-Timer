@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Windows_Lock_Timer
 {
@@ -45,6 +46,7 @@ namespace Windows_Lock_Timer
             ns.Flush();
             return true;
         }
+
         static void Main(string[] args)
         {
             /* Begin bootstrapping
@@ -277,20 +279,23 @@ namespace Windows_Lock_Timer
                                 {
                                     string trimmedHost = host.Trim();
 
-
-                                    TimerPacket timerPacket = new TimerPacket();
-                                    timerPacket.Message = "yeet";
-                                    timerPacket.Count = arguments.cooldownTime;
-
-                                    if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                                    new Thread(() =>
                                     {
-                                        Debug.WriteLine(trimmedHost + " totally worked");
-                                    }
-                                    else
-                                    {
-                                        Debug.WriteLine("TCP did not send to " + trimmedHost);
-                                    }
 
+                                        TimerPacket timerPacket = new TimerPacket();
+                                        timerPacket.Message = "yeet";
+                                        timerPacket.Count = arguments.cooldownTime;
+
+                                        if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                                        {
+                                            Debug.WriteLine(trimmedHost + " totally worked");
+                                        }
+                                        else
+                                        {
+                                            Debug.WriteLine("TCP did not send to " + trimmedHost);
+                                        }
+
+                                    }).Start();
                                     /*
                                     IPAddress hostAddress;
 

@@ -99,7 +99,7 @@ namespace Windows_Lock_Timer
             arguments.lockTime = 2;
             arguments.warningTime = 1;
             arguments.cooldownTime = 2;
-            arguments.port = 6434;
+            arguments.port = 58934;
             arguments.warningMessage = "Debug warning message";
 #endif
 
@@ -111,6 +111,39 @@ namespace Windows_Lock_Timer
                 usageSession.warned = false;
                 usageSession.expiry = DateTime.Now.AddMinutes(arguments.lockTime); //MAKE THIS CONFIGURABLE
                 eventLog(reason, 1);
+
+                /* Begin Messaging */
+
+                string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
+                if (File.Exists(hostFilePath))
+                {
+                    Debug.WriteLine("Heyo file exists");
+                    string hostFileContents = File.ReadAllText(hostFilePath);
+                    foreach (string host in hostFileContents.Split('\n'))
+                    {
+                        string trimmedHost = host.Trim();
+
+                        new Thread(() =>
+                        {
+
+                            TimerPacket timerPacket = new TimerPacket();
+                            timerPacket.Message = reason;
+                            timerPacket.Cooldown = arguments.cooldownTime;
+
+                            if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                            {
+                                Debug.WriteLine(trimmedHost + " totally worked");
+                            }
+                            else
+                            {
+                                Debug.WriteLine("TCP did not send to " + trimmedHost);
+                            }
+
+                        }).Start();
+                    }
+                }
+
+                /* End messaging */
             }
 
             SystemEvents.SessionSwitch += new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
@@ -283,8 +316,8 @@ namespace Windows_Lock_Timer
                                     {
 
                                         TimerPacket timerPacket = new TimerPacket();
-                                        timerPacket.Message = "yeet";
-                                        timerPacket.Count = arguments.cooldownTime;
+                                        timerPacket.Message = "Locked";
+                                        timerPacket.Cooldown = arguments.cooldownTime;
 
                                         if (sendTCP(timerPacket, trimmedHost, arguments.port))
                                         {

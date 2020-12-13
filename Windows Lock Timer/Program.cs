@@ -1,11 +1,11 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Net.Sockets;
-using System.Text;
-using Newtonsoft.Json;
+using System.Windows.Forms;
+
 
 namespace Windows_Lock_Timer
 {
@@ -17,17 +17,63 @@ namespace Windows_Lock_Timer
             {
                 eventLog.Source = "Application";
                 eventLog.WriteEntry(message, EventLogEntryType.Information, 420, type);
+                Debug.WriteLine("event logging: " + message);
             }
         }
         static void Main(string[] args)
         {
-            // Clean up all these comments
+            /* Begin bootstrapping
+            string appRoaming = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Windows Lock Timer");
+            string settingsFile = Path.Combine(appRoaming, "Settings.ini");
+            Directory.CreateDirectory(appRoaming);
+
+
+            var Settings = new Settings();
+            var MyIni = new IniFile(settingsFile);
+
+            if (File.Exists(settingsFile))
+            {
+                Debug.WriteLine(Settings.Times.LockTime);
+            }
+            else
+            {
+                foreach (PropertyInfo firstLevel in typeof(Settings).GetProperties())
+                {
+                    if (firstLevel.Name == firstLevel.PropertyType.Name)
+                    {
+                        //this be an object, loop it
+                        Debug.WriteLine(firstLevel.Name);
+                        foreach (PropertyInfo secondLevel in Type.GetType(typeof(Settings).Namespace + "." + firstLevel.Name).GetProperties())
+                        {
+                            Debug.WriteLine(secondLevel.Name);
+                            Debug.WriteLine(Type.GetType(typeof(Settings).Namespace + "." + secondLevel.Name).GetProperty(secondLevel.Name).GetValue(Settings));
+                            MyIni.Write(secondLevel.Name, "disavalue", firstLevel.Name);
+                        }
+                    }
+                    else
+                    {
+                        //this is top-level boiz, dump it in the top config
+                        MyIni.Write(firstLevel.Name, "disavalue");
+                    }
+                }
+            }
+            
+
+
+
+            End bootstrapping */
+
             ArgumentParser arguments = new ArgumentParser(args);
             UsageSession usageSession = new UsageSession();
 
-            //Console.WriteLine(arguments.lockTime);
-            //Console.WriteLine(arguments.warningTime);
-            //Console.WriteLine(arguments.warningMessage);
+            DateTime lastLockTime = DateTime.MinValue;
+
+#if DEBUG
+            arguments.lockTime = 2;
+            arguments.warningTime = 1;
+            arguments.cooldownTime = 2;
+            arguments.warningMessage = "Debug warning message";
+#endif
 
             void startSession(string reason)
             {
@@ -46,7 +92,6 @@ namespace Windows_Lock_Timer
                 if (e.Reason == SessionSwitchReason.SessionLock)
                 {
                     //Computer was locked, either by user or script
-                    Console.WriteLine("locked because of " + usageSession.reason);
                     eventLog("locked because of " + usageSession.reason, 1);
                     usageSession.active = false;
                 }
@@ -58,8 +103,44 @@ namespace Windows_Lock_Timer
                 else if (e.Reason == SessionSwitchReason.SessionUnlock)
                 {
                     //User has been allowed back in
+
                     startSession("unlocked");
-                    Console.WriteLine("unlocked");
+
+                    if (DateTime.Compare(lastLockTime, DateTime.MinValue) > 0)
+                    {
+                        DateTime thisTime = DateTime.Now.AddMinutes(0 - arguments.cooldownTime);
+                        int tooSoonComparisonResult = DateTime.Compare(lastLockTime, thisTime);
+                        if (tooSoonComparisonResult >= 0)
+                        {
+                            Debug.WriteLine("Less than 10 seconds has elapsed");
+
+                            int timeAmount = (int)((lastLockTime - thisTime).TotalSeconds);
+                            string timeUnit = (timeAmount > 60) ? " minutes" : " seconds";
+                            timeAmount = (timeAmount > 60) ? (int)(timeAmount / 60) : timeAmount;
+                            string timePhrase = timeAmount.ToString() + timeUnit;
+                            DialogResult dialogResult = MessageBox.Show("There is still " + timePhrase + " on the Cooldown Timer. Unlock Anyway?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, MessageBoxOptions.DefaultDesktopOnly);
+
+                            if (dialogResult == DialogResult.Yes)
+                            {
+                                //do something
+                                Debug.WriteLine("Messagebox was 'yes'");
+                            }
+                            else if (dialogResult == DialogResult.No)
+                            {
+                                try
+                                {
+                                    usageSession.reason = "cooldown not met";
+                                    Process.Start("rundll32.exe", "user32.dll,LockWorkStation");
+                                    eventLog("Denied entry, telling PC to lock", 1);
+                                }
+                                catch
+                                {
+                                    eventLog("Failed to lock", 2);
+                                }
+                            }
+                        }
+                    }
+
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogon)
                 {
@@ -69,7 +150,57 @@ namespace Windows_Lock_Timer
             }
 
 
-            startSession("logged in");
+            startSession("logged in (start)");
+
+            /*
+            Form f = new Form();
+            f.StartPosition = FormStartPosition.CenterScreen;
+            f.Size = new Size(500, 200);
+            f.FormBorderStyle = FormBorderStyle.FixedSingle;
+            f.MaximizeBox = false;
+            f.MinimizeBox = false;
+            f.Icon = SystemIcons.Exclamation;
+            f.Text = "Timer Cooldown Not Exceeded";
+
+            Label t = new Label();
+            t.TextAlign = ContentAlignment.MiddleCenter;
+            t.Text = "00:00";
+            t.Font = new Font("Arial", 24, FontStyle.Bold);
+            t.Size = new Size(400, 30);
+            t.Left = (f.ClientSize.Width - t.Width) / 2;
+            t.Top = ((f.ClientSize.Height - t.Height) / 2) - 50;
+            f.Controls.Add(t);
+
+
+            ProgressBar p = new ProgressBar();
+            p.Location = new Point(10, 10);
+            p.Size = new Size(400, 30);
+            p.Left = (f.ClientSize.Width - p.Width) / 2;
+            p.Top = (f.ClientSize.Height - p.Height) / 2;
+            p.Style = ProgressBarStyle.Continuous;
+            p.Maximum = 100;
+            p.Step = 1;
+            p.Value = 30;
+            f.Controls.Add(p);
+            
+            Label m = new Label();
+            m.TextAlign = ContentAlignment.MiddleCenter;
+            m.Text = "There is still time left on the cooldown timer.\nUnlock Anyway?";
+            //t.Font = new Font("Arial", 24, FontStyle.Bold);
+            m.Size = new Size(400, 30);
+            m.Left = (f.ClientSize.Width - t.Width) / 2;
+            m.Top = ((f.ClientSize.Height - t.Height) / 2) + 50;
+            f.Controls.Add(m);
+
+            Button folderButton = new Button();
+            folderButton.Width = 50;
+            folderButton.Height = 14;
+            folderButton.ForeColor = Color.Black;
+            folderButton.Text = "Yes";
+            f.Controls.Add(folderButton);
+
+            f.ShowDialog();
+            */
 
             //This script is ran at the time the computer turns on.
 
@@ -96,6 +227,8 @@ namespace Windows_Lock_Timer
                         if (expiryComparisonResult >= 0)
                         {
                             //Console.WriteLine("locking");
+                            lastLockTime = DateTime.Now;
+
                             try
                             {
                                 usageSession.reason = "script";
@@ -109,9 +242,8 @@ namespace Windows_Lock_Timer
 
                             usageSession.active = false;
 
-                            /*
-                             * This last part constitutes the "tell another computer" bit
-                             */
+
+                            /* Begin TCP communication 
 
                             TcpClient server;
                             TimerPacket timerPacket = new TimerPacket();
@@ -135,6 +267,8 @@ namespace Windows_Lock_Timer
                             NetworkStream ns = server.GetStream();
                             ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);
                             ns.Flush();
+
+                             End TCP communication */
                         }
                     }
                 }

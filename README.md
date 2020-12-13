@@ -16,13 +16,14 @@ ___
 -w			number of minutes prior to locking the warning will display
 -c			number of minutes for the cooldown between sessions
 -m			the text of the warning message to display
+-p          the port over which to send TCP packets
 </pre>
 
 Example:
 
-`C:\Program Files\WindowsLockTimer\WindowsLockTimer.exe -t 60 -w 2 -m "Sample Text"`
+`C:\Program Files\WindowsLockTimer\WindowsLockTimer.exe -t 60 -w 2 -c 15 -p 1337 -m "Sample Text"`
 
-This will create a 60-minute timer, with a 2-minute warning that says "Sample Text".
+This will create a 60-minute timer, with a 2-minute warning that says "Sample Text", and a 15-minute cooldown where the user should go do something else. It will also broadcast on TCP port `1337`, if the `hosts` file is present.
 
 ## Notes
 

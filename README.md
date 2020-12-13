@@ -16,7 +16,7 @@ ___
 -w			number of minutes prior to locking the warning will display
 -c			number of minutes for the cooldown between sessions
 -m			the text of the warning message to display
--p          the port over which to send TCP packets
+-p      the port over which to send TCP packets
 </pre>
 
 Example:

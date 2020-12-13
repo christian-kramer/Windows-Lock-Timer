@@ -113,7 +113,7 @@ namespace Windows_Lock_Timer
                         if (tooSoonComparisonResult >= 0)
                         {
                             Debug.WriteLine("Less than 10 seconds has elapsed");
-
+                            Thread.Sleep(1000);
                             int timeAmount = (int)((lastLockTime - thisTime).TotalSeconds);
                             string timeUnit = (timeAmount > 60) ? " minutes" : " seconds";
                             timeAmount = (timeAmount > 60) ? (int)(timeAmount / 60) : timeAmount;

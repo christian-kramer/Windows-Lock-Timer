@@ -20,9 +20,9 @@ ___
 
 Example:
 
-`C:\Program Files\WindowsLockTimer\WindowsLockTimer.exe -t 60 -w 2 -m "Sample Text"`
+`C:\Program Files\WindowsLockTimer\WindowsLockTimer.exe -t 60 -w 2 -c 15 -m "Sample Text"`
 
-This will create a 60-minute timer, with a 2-minute warning that says "Sample Text".
+This will create a 60-minute timer, with a 2-minute warning that says "Sample Text", and a 15-minute cooldown where the user should go do something else.
 
 ## Notes
 

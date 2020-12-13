@@ -10,6 +10,7 @@ namespace Windows_Lock_Timer
         public int lockTime;
         public int cooldownTime;
         public int warningTime;
+        public int port;
         public ArgumentParser(string[] args)
         {
             for (int i = 0; i < args.Length; i++)
@@ -29,6 +30,10 @@ namespace Windows_Lock_Timer
                 else if (args[i] == "-c")
                 {
                     cooldownTime = int.Parse(args[i + 1]);
+                }
+                else if (args[i] == "-p")
+                {
+                    port = int.Parse(args[i + 1]);
                 }
             }
 

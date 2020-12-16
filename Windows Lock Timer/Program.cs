@@ -99,8 +99,9 @@ namespace Windows_Lock_Timer
             arguments.lockTime = 2;
             arguments.warningTime = 1;
             arguments.cooldownTime = 2;
-            arguments.port = 31663;
+            arguments.port = 31205;
             arguments.warningMessage = "Debug warning message";
+            Console.WriteLine("Running in Debug Mode");
 #endif
 
             void startSession(string reason)

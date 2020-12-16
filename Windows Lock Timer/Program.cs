@@ -99,7 +99,7 @@ namespace Windows_Lock_Timer
             arguments.lockTime = 2;
             arguments.warningTime = 1;
             arguments.cooldownTime = 2;
-            arguments.port = 58934;
+            arguments.port = 31663;
             arguments.warningMessage = "Debug warning message";
 #endif
 
@@ -114,6 +114,7 @@ namespace Windows_Lock_Timer
 
                 /* Begin Messaging */
 
+                /*
                 string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
                 if (File.Exists(hostFilePath))
                 {
@@ -142,6 +143,7 @@ namespace Windows_Lock_Timer
                         }).Start();
                     }
                 }
+                */
 
                 /* End messaging */
             }
@@ -316,8 +318,8 @@ namespace Windows_Lock_Timer
                                     {
 
                                         TimerPacket timerPacket = new TimerPacket();
-                                        timerPacket.Message = "Locked";
-                                        timerPacket.Cooldown = arguments.cooldownTime;
+                                        timerPacket.ID = 0; // ID 0 represents "Forcefully Locked", might change this later
+                                        timerPacket.Count = arguments.cooldownTime;
 
                                         if (sendTCP(timerPacket, trimmedHost, arguments.port))
                                         {

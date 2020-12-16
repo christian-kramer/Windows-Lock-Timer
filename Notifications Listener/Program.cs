@@ -50,15 +50,8 @@ namespace Notifications_Listener
             ArgumentParser arguments = new ArgumentParser(args);
 
 #if DEBUG
-            arguments.lockedTitle = "Test Title";
-            arguments.lockedMessage = "Test Lock Message";
-            arguments.notificationGroup = "Debug Notifications";
             arguments.port = 31205;
 #endif
-            var textLines = new List<string>();
-            textLines.Add(arguments.lockedTitle);
-            textLines.Add(arguments.lockedMessage);
-
 
             TcpListener server = new TcpListener(IPAddress.Any, arguments.port);
             TcpClient client = default;
@@ -94,7 +87,20 @@ namespace Notifications_Listener
                 if (validPacket)
                 {
                     Console.WriteLine("Valid JSON");
-                    Toast(textLines, arguments.notificationGroup);
+
+                    if (packet.ID == 0)
+                    {
+#if DEBUG
+                        arguments.lockedTitle = "PC Locked";
+                        arguments.lockedMessage = "Please set timer for " + packet.Count + " minutes";
+                        arguments.notificationGroup = "Debug Notifications";
+#endif
+                        var textLines = new List<string>();
+                        textLines.Add(arguments.lockedTitle);
+                        textLines.Add(arguments.lockedMessage);
+
+                        Toast(textLines, arguments.notificationGroup);
+                    }
                 }
             }
 

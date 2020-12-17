@@ -177,7 +177,7 @@ namespace Windows_Lock_Timer
                         if (tooSoonComparisonResult >= 0)
                         {
                             Debug.WriteLine("Less than 10 seconds has elapsed");
-                            Thread.Sleep(800); //This is important so that the messagebox shows *after* the windows unlock animation
+                            Thread.Sleep(250); //This is important so that the messagebox shows *after* the windows unlock animation
                             int timeAmount = (int)((lastLockTime - thisTime).TotalSeconds);
                             string timeUnit = (timeAmount > 60) ? " minutes" : " seconds";
                             timeAmount = (timeAmount > 60) ? (int)(timeAmount / 60) : timeAmount;

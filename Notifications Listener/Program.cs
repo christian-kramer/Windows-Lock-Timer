@@ -82,12 +82,12 @@ namespace Notifications_Listener
                 {
                     string msg = Encoding.ASCII.GetString(receivedBuffer, 0, receivedBuffer.Length);
 
-                    TimerPacket packet = new TimerPacket();
+                    Windows_Lock_Timer.TimerPacket packet = new Windows_Lock_Timer.TimerPacket();
 
                     bool validPacket = true;
                     try
                     {
-                        packet = JsonConvert.DeserializeObject<TimerPacket>(msg);
+                        packet = JsonConvert.DeserializeObject<Windows_Lock_Timer.TimerPacket>(msg);
                     }
                     catch (JsonReaderException e)
                     {

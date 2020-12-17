@@ -65,41 +65,55 @@ namespace Notifications_Listener
                 byte[] receivedBuffer = new byte[256];
                 NetworkStream stream = client.GetStream();
 
-                stream.Read(receivedBuffer, 0, receivedBuffer.Length);
-
-                string msg = Encoding.ASCII.GetString(receivedBuffer, 0, receivedBuffer.Length);
-
-                TimerPacket packet = new TimerPacket();
-
-                bool validPacket = true;
+                bool read = true;
                 try
                 {
-                    packet = JsonConvert.DeserializeObject<TimerPacket>(msg);
+                    stream.Read(receivedBuffer, 0, receivedBuffer.Length);
                 }
-                catch (JsonReaderException e)
+                catch (System.IO.IOException e)
                 {
                     //
-                    validPacket = false;
-                    Console.Write(msg + "\r\n");
-                    Console.WriteLine("Invalid JSON");
+                    read = false;
+                    client.GetStream().Close();
+                    client.Close();
                 }
 
-                if (validPacket)
+                if (read)
                 {
-                    Console.WriteLine("Valid JSON");
+                    string msg = Encoding.ASCII.GetString(receivedBuffer, 0, receivedBuffer.Length);
 
-                    if (packet.ID == 0)
+                    TimerPacket packet = new TimerPacket();
+
+                    bool validPacket = true;
+                    try
                     {
+                        packet = JsonConvert.DeserializeObject<TimerPacket>(msg);
+                    }
+                    catch (JsonReaderException e)
+                    {
+                        //
+                        validPacket = false;
+                        Console.Write(msg + "\r\n");
+                        Console.WriteLine("Invalid JSON");
+                    }
+
+                    if (validPacket)
+                    {
+                        Console.WriteLine("Valid JSON");
+
+                        if (packet.ID == 0)
+                        {
 #if DEBUG
                         arguments.lockedTitle = "PC Locked";
-                        arguments.lockedMessage = "Please set timer for " + packet.Count + " minutes";
+                        arguments.lockedMessage = "Please set timer for ";
                         arguments.notificationGroup = "Debug Notifications";
 #endif
-                        var textLines = new List<string>();
-                        textLines.Add(arguments.lockedTitle);
-                        textLines.Add(arguments.lockedMessage);
+                            var textLines = new List<string>();
+                            textLines.Add(arguments.lockedTitle);
+                            textLines.Add(arguments.lockedMessage + packet.Count.ToString() + " minutes");
 
-                        Toast(textLines, arguments.notificationGroup);
+                            Toast(textLines, arguments.notificationGroup);
+                        }
                     }
                 }
             }

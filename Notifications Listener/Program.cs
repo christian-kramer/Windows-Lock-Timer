@@ -9,19 +9,42 @@ using System.Net;
 using System.Text;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Notifications_Listener
 {
     class Program
     {
-        static void Toast(List<string> textLines, string notificationGroup)
+        static void Toast(List<string> textLines, string notificationGroup, bool alarm = false)
         {
 
-            //XmlDocument template = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+            XmlDocument template = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+
+            if (alarm)
+            {
+                /* Handle setting toast duration to "long" */
+                IXmlNode toastNode = template.SelectSingleNode("toast");
+                XmlAttribute duration = template.CreateAttribute("duration");
+                duration.Value = "long";
+                toastNode.Attributes.SetNamedItem(duration);
+
+
+                XmlElement audioElement = template.CreateElement("audio");
+                /* Source Attribute */
+                XmlAttribute audioSource = template.CreateAttribute("src");
+                audioSource.Value = "ms-winsoundevent:Notification.Looping.Alarm3";
+                audioElement.Attributes.SetNamedItem(audioSource);
+                /* Loop Attribute */
+                XmlAttribute audioLoop = template.CreateAttribute("loop");
+                audioLoop.Value = "true";
+                audioElement.Attributes.SetNamedItem(audioLoop);
+
+                toastNode.AppendChild(audioElement);
+            }
 
             //This absolutely needs to be built programatically
-            XmlDocument template = new XmlDocument();
-            template.LoadXml("<toast duration=\"long\"><visual><binding template=\"ToastText02\"><text id=\"1\"></text><text id=\"2\"></text></binding></visual><audio src=\"ms-winsoundevent:Notification.Looping.Alarm3\" loop=\"true\"/></toast>");
+            //XmlDocument template = new XmlDocument();
+            //template.LoadXml("<toast duration=\"long\"><visual><binding template=\"ToastText02\"><text id=\"1\"></text><text id=\"2\"></text></binding></visual><audio src=\"ms-winsoundevent:Notification.Looping.Alarm3\" loop=\"true\"/></toast>");
 
 
             /* Begin add text lines */
@@ -115,15 +138,28 @@ namespace Notifications_Listener
                         if (packet.ID == 0)
                         {
 #if DEBUG
-                        arguments.lockedTitle = "PC Locked";
-                        arguments.lockedMessage = "Please set timer for ";
-                        arguments.notificationGroup = "Debug Notifications";
+                            arguments.lockedTitle = "PC Locked";
+                            arguments.lockedMessage = "Please set timer for ";
+                            arguments.notificationGroup = "Debug Notifications";
 #endif
-                            var textLines = new List<string>();
-                            textLines.Add(arguments.lockedTitle);
-                            textLines.Add(arguments.lockedMessage + packet.Count.ToString() + " minutes");
+                            /* Initial Toast warning of Lock Event */
+                            var lockTextLines = new List<string>();
+                            lockTextLines.Add(arguments.lockedTitle);
+                            lockTextLines.Add(arguments.lockedMessage + packet.Count.ToString() + " minutes");
 
-                            Toast(textLines, arguments.notificationGroup);
+                            Toast(lockTextLines, arguments.notificationGroup);
+
+
+                            /* Timed Delay */
+                            DateTime alarmTime = DateTime.Now.AddMinutes(packet.Count);
+                            while (DateTime.Now < alarmTime) { Thread.Sleep(1); }
+
+                            /* Second Toast warning of Timer Expiry Event */
+                            var alarmTextLines = new List<string>();
+                            alarmTextLines.Add("Time's Up!");
+                            alarmTextLines.Add("PC may be unlocked");
+
+                            Toast(alarmTextLines, arguments.notificationGroup, true); //The trailing "true" makes this an alarm toast
 
                             /* Everything below this is non-functional for this context
                             ToastContent toastContent = new ToastContent()

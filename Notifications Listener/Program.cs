@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace Notifications_Listener
 {
@@ -16,7 +17,12 @@ namespace Notifications_Listener
         static void Toast(List<string> textLines, string notificationGroup)
         {
 
-            XmlDocument template = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+            //XmlDocument template = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+
+            //This absolutely needs to be built programatically
+            XmlDocument template = new XmlDocument();
+            template.LoadXml("<toast duration=\"long\"><visual><binding template=\"ToastText02\"><text id=\"1\"></text><text id=\"2\"></text></binding></visual><audio src=\"ms-winsoundevent:Notification.Looping.Alarm3\" loop=\"true\"/></toast>");
+
 
             /* Begin add text lines */
             byte lineIndex = 0;
@@ -47,6 +53,11 @@ namespace Notifications_Listener
         }
         static void Main(string[] args)
         {
+            /* Unnecessary
+            DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
+            DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("6B29FC40-CA47-1067-B31D-00DD010662DA");
+            */
+
             ArgumentParser arguments = new ArgumentParser(args);
 
 #if DEBUG
@@ -113,6 +124,47 @@ namespace Notifications_Listener
                             textLines.Add(arguments.lockedMessage + packet.Count.ToString() + " minutes");
 
                             Toast(textLines, arguments.notificationGroup);
+
+                            /* Everything below this is non-functional for this context
+                            ToastContent toastContent = new ToastContent()
+                            {
+                                Scenario = ToastScenario.Alarm,
+                                Visual = new ToastVisual()
+                                {
+                                    BindingGeneric = new ToastBindingGeneric()
+                                    {
+                                        Children =
+                                        {
+                                            new AdaptiveText()
+                                            {
+                                                Text = "yeeeet"
+                                            },
+
+                                            new AdaptiveText()
+                                            {
+                                                Text = "boi"
+                                            }
+
+                                        }
+                                    }
+                                },
+                                Actions = new ToastActionsCustom()
+                                {
+                                    Buttons =
+                                    {
+                                        new ToastButtonSnooze(),
+                                        new ToastButtonDismiss()
+                                    }
+                                }
+                            };
+                            DateTime alarmTime = DateTime.Now.AddSeconds(15);
+                            var scheduledNotif = new ScheduledToastNotification(
+                                toastContent.GetXml(), // Content of the toast
+                                alarmTime // Time we want the toast to appear at
+                            );
+
+                            DesktopNotificationManagerCompat.CreateToastNotifier().AddToSchedule(scheduledNotif);
+                            */
                         }
                     }
                 }

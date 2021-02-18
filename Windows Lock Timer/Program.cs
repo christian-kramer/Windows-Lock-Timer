@@ -2,10 +2,15 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
+using Newtonsoft.Json;
+using System.Text;
+using System.Collections.Generic;
 
 namespace Windows_Lock_Timer
 {
@@ -20,6 +25,28 @@ namespace Windows_Lock_Timer
                 Debug.WriteLine("event logging: " + message);
             }
         }
+
+        static bool sendTCP(TimerPacket timerPacket, string ipString, int port)
+        {
+            TcpClient server;
+
+            try
+            {
+                server = new TcpClient(ipString, port);
+            }
+            catch (SocketException)
+            {
+                //Console.WriteLine("Unable to connect to server");
+                return false;
+            }
+
+            string input = JsonConvert.SerializeObject(timerPacket);
+            NetworkStream ns = server.GetStream();
+            ns.Write(Encoding.ASCII.GetBytes(input), 0, input.Length);
+            ns.Flush();
+            return true;
+        }
+
         static void Main(string[] args)
         {
             /* Begin bootstrapping
@@ -72,7 +99,9 @@ namespace Windows_Lock_Timer
             arguments.lockTime = 2;
             arguments.warningTime = 1;
             arguments.cooldownTime = 2;
+            arguments.port = 31205;
             arguments.warningMessage = "Debug warning message";
+            Console.WriteLine("Running in Debug Mode");
 #endif
 
             void startSession(string reason)
@@ -83,6 +112,41 @@ namespace Windows_Lock_Timer
                 usageSession.warned = false;
                 usageSession.expiry = DateTime.Now.AddMinutes(arguments.lockTime); //MAKE THIS CONFIGURABLE
                 eventLog(reason, 1);
+
+                /* Begin Messaging */
+
+                /*
+                string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
+                if (File.Exists(hostFilePath))
+                {
+                    Debug.WriteLine("Heyo file exists");
+                    string hostFileContents = File.ReadAllText(hostFilePath);
+                    foreach (string host in hostFileContents.Split('\n'))
+                    {
+                        string trimmedHost = host.Trim();
+
+                        new Thread(() =>
+                        {
+
+                            TimerPacket timerPacket = new TimerPacket();
+                            timerPacket.Message = reason;
+                            timerPacket.Cooldown = arguments.cooldownTime;
+
+                            if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                            {
+                                Debug.WriteLine(trimmedHost + " totally worked");
+                            }
+                            else
+                            {
+                                Debug.WriteLine("TCP did not send to " + trimmedHost);
+                            }
+
+                        }).Start();
+                    }
+                }
+                */
+
+                /* End messaging */
             }
 
             SystemEvents.SessionSwitch += new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
@@ -113,12 +177,15 @@ namespace Windows_Lock_Timer
                         if (tooSoonComparisonResult >= 0)
                         {
                             Debug.WriteLine("Less than 10 seconds has elapsed");
-                            Thread.Sleep(1000);
+                            Thread.Sleep(250); //This is important so that the messagebox shows *after* the windows unlock animation
                             int timeAmount = (int)((lastLockTime - thisTime).TotalSeconds);
                             string timeUnit = (timeAmount > 60) ? " minutes" : " seconds";
                             timeAmount = (timeAmount > 60) ? (int)(timeAmount / 60) : timeAmount;
                             string timePhrase = timeAmount.ToString() + timeUnit;
+
                             DialogResult dialogResult = MessageBox.Show("There is still " + timePhrase + " on the Cooldown Timer. Unlock Anyway?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, MessageBoxOptions.DefaultDesktopOnly);
+
+                            //Here should be where we focus to messagebox
 
                             if (dialogResult == DialogResult.Yes)
                             {
@@ -242,6 +309,62 @@ namespace Windows_Lock_Timer
 
                             usageSession.active = false;
 
+                            string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
+                            if (File.Exists(hostFilePath))
+                            {
+                                Debug.WriteLine("Heyo file exists");
+                                string hostFileContents = File.ReadAllText(hostFilePath);
+                                foreach (string host in hostFileContents.Split('\n'))
+                                {
+                                    string trimmedHost = host.Trim();
+
+                                    new Thread(() =>
+                                    {
+
+                                        TimerPacket timerPacket = new TimerPacket();
+                                        timerPacket.ID = 0; // ID 0 represents "Forcefully Locked", might change this later
+                                        timerPacket.Count = arguments.cooldownTime;
+
+                                        if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                                        {
+                                            Debug.WriteLine(trimmedHost + " totally worked");
+                                        }
+                                        else
+                                        {
+                                            Debug.WriteLine("TCP did not send to " + trimmedHost);
+                                        }
+
+                                    }).Start();
+                                    /*
+                                    IPAddress hostAddress;
+
+                                    if (IPAddress.TryParse(trimmedHost, out hostAddress))
+                                    {
+                                        Debug.WriteLine(hostAddress.ToString() + " is an IP address");
+                                    }
+                                    else
+                                    {
+                                        IPHostEntry yeet;
+                                        bool success = true;
+                                        try
+                                        {
+                                            yeet = Dns.GetHostEntry(trimmedHost);
+                                            Debug.WriteLine(yeet.AddressList[0]);
+                                        }
+                                        catch
+                                        {
+                                            //Debug.WriteLine("Failed to resolve " + trimmedHost);
+                                            success = false;
+                                        }
+
+                                        if (success)
+                                        {
+                                            Debug.WriteLine("successfully resolved host " + trimmedHost);
+                                        }
+                                    }
+                                    */
+                                }
+                            }
 
                             /* Begin TCP communication 
 

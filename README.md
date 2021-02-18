@@ -25,6 +25,7 @@ Example:
 
 This will create a 60-minute timer, with a 2-minute warning that says "Sample Text", and a 15-minute cooldown where the user should go do something else. It will also broadcast on TCP port `1337`, if the `hosts` file is present.
 
+
 ## Notes
 
 * It's important to consider that WindowsLockTimer.exe must be ran *as* the account you want to lock. For this reason, it's helpful to disable task manager in group policy to prevent the user from ending the task.

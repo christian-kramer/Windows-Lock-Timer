@@ -182,7 +182,10 @@ namespace Windows_Lock_Timer
                             string timeUnit = (timeAmount > 60) ? " minutes" : " seconds";
                             timeAmount = (timeAmount > 60) ? (int)(timeAmount / 60) : timeAmount;
                             string timePhrase = timeAmount.ToString() + timeUnit;
+
                             DialogResult dialogResult = MessageBox.Show("There is still " + timePhrase + " on the Cooldown Timer. Unlock Anyway?", "Warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2, MessageBoxOptions.DefaultDesktopOnly);
+
+                            //Here should be where we focus to messagebox
 
                             if (dialogResult == DialogResult.Yes)
                             {

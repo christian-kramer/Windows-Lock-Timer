@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Windows Lock Timer", "Windows Lock Timer.csproj", "{AE5B4A82-AF4D-4C57-9B8C-17560D69518C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notifications Listener", "..\Notifications Listener\Notifications Listener.csproj", "{800237F7-C95D-46C2-A8F1-E46DAF2FC087}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notifications Listener", "..\Notifications Listener\Notifications Listener.csproj", "{800237F7-C95D-46C2-A8F1-E46DAF2FC087}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

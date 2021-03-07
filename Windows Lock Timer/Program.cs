@@ -96,7 +96,7 @@ namespace Windows_Lock_Timer
             DateTime lastLockTime = DateTime.MinValue;
 
 #if DEBUG
-            arguments.lockTime = 2;
+            arguments.lockTime = 3;
             arguments.warningTime = 1;
             arguments.cooldownTime = 2;
             arguments.port = 31205;
@@ -149,6 +149,38 @@ namespace Windows_Lock_Timer
                 /* End messaging */
             }
 
+            void sendTimerPacket(int id, int count)
+            {
+                string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
+                if (File.Exists(hostFilePath))
+                {
+                    Debug.WriteLine("Heyo file exists");
+                    string hostFileContents = File.ReadAllText(hostFilePath);
+                    foreach (string host in hostFileContents.Split('\n'))
+                    {
+                        string trimmedHost = host.Trim();
+
+                        new Thread(() =>
+                        {
+
+                            TimerPacket timerPacket = new TimerPacket();
+                            timerPacket.ID = id; // ID 0 represents "Forcefully Locked", might change this later
+                            timerPacket.Count = count;
+
+                            if (sendTCP(timerPacket, trimmedHost, arguments.port))
+                            {
+                                Debug.WriteLine(trimmedHost + " totally worked");
+                            }
+                            else
+                            {
+                                Debug.WriteLine("TCP did not send to " + trimmedHost);
+                            }
+
+                        }).Start();
+                    }
+                }
+            }
+
             SystemEvents.SessionSwitch += new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
 
             void SystemEvents_SessionSwitch(object sender, SessionSwitchEventArgs e)
@@ -158,6 +190,18 @@ namespace Windows_Lock_Timer
                     //Computer was locked, either by user or script
                     eventLog("locked because of " + usageSession.reason, 1);
                     usageSession.active = false;
+
+                    bool beforeExpiry = DateTime.Compare(DateTime.Now, usageSession.expiry) < 0; //"now" is earlier than expiry, true/false
+                    bool withinBullshitRange = DateTime.Compare(DateTime.Now.AddMinutes(1), usageSession.expiry) > 0; //"now" is within x minutes of expiry, true/false
+                    bool reasonIsUser = usageSession.reason == "user";
+                    
+                    if (beforeExpiry && withinBullshitRange && reasonIsUser && usageSession.warned)
+                    {
+                        //this means that the computer was locked manually less than 5 minutes before the expiration. BULLSHIT DETECTED
+                        Debug.WriteLine("Bullshit detected!!"); //It is at this moment that a lock command should be given.
+                        sendTimerPacket(0, arguments.cooldownTime/*+ arguments.warningTime*/);
+                        //SystemSounds.Exclamation.Play();
+                    }
                 }
                 else if (e.Reason == SessionSwitchReason.SessionLogoff)
                 {
@@ -272,6 +316,7 @@ namespace Windows_Lock_Timer
             //This script is ran at the time the computer turns on.
 
             var loop1Task = Task.Run(async () => {
+
                 while (true)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(1));
@@ -286,9 +331,9 @@ namespace Windows_Lock_Timer
                         {
                             //Console.WriteLine("doing the shutdown");
                             Process.Start("shutdown", "-s -t 60 -c \"" + arguments.warningMessage + "\"");
+                            usageSession.warned = true;
                             Thread.Sleep(5000);
                             Process.Start("shutdown", "-a");
-                            usageSession.warned = true;
                         }
 
                         if (expiryComparisonResult >= 0)
@@ -308,7 +353,8 @@ namespace Windows_Lock_Timer
                             }
 
                             usageSession.active = false;
-
+                            sendTimerPacket(0, arguments.cooldownTime);
+                            /*
                             string hostFilePath = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "hosts");
                             if (File.Exists(hostFilePath))
                             {
@@ -362,9 +408,10 @@ namespace Windows_Lock_Timer
                                             Debug.WriteLine("successfully resolved host " + trimmedHost);
                                         }
                                     }
-                                    */
+                                    */ /*
                                 }
                             }
+                            */
 
                             /* Begin TCP communication 
 

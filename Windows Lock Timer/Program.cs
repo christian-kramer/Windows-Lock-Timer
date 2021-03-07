@@ -198,6 +198,9 @@ namespace Windows_Lock_Timer
                     if (beforeExpiry && withinBullshitRange && reasonIsUser && usageSession.warned)
                     {
                         //this means that the computer was locked manually less than 5 minutes before the expiration. BULLSHIT DETECTED
+                        
+                        lastLockTime = DateTime.Now;
+
                         Debug.WriteLine("Bullshit detected!!"); //It is at this moment that a lock command should be given.
                         sendTimerPacket(0, arguments.cooldownTime/*+ arguments.warningTime*/);
                         //SystemSounds.Exclamation.Play();

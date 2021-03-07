@@ -192,7 +192,7 @@ namespace Windows_Lock_Timer
                     usageSession.active = false;
 
                     bool beforeExpiry = DateTime.Compare(DateTime.Now, usageSession.expiry) < 0; //"now" is earlier than expiry, true/false
-                    bool withinBullshitRange = DateTime.Compare(DateTime.Now.AddMinutes(1), usageSession.expiry) > 0; //"now" is within x minutes of expiry, true/false
+                    bool withinBullshitRange = DateTime.Compare(DateTime.Now.AddMinutes(arguments.warningTime), usageSession.expiry) > 0; //"now" is within x minutes of expiry, true/false
                     bool reasonIsUser = usageSession.reason == "user";
                     
                     if (beforeExpiry && withinBullshitRange && reasonIsUser && usageSession.warned)
